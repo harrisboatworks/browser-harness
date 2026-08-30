@@ -3,8 +3,10 @@
 ## Routes and table loading
 
 - Direct route: `https://ads.google.com/aw/changehistory`.
-- Change History uses a virtualized table inside the app scroll host. If the footer reports rows but `document.body.innerText` shows only headers, scroll the `div.awsm-nav-bar-and-content` element. The event rows then render as top-level `.particle-table-row` elements.
-- One recommendation type can produce several events. Group the visible rows by the `Applied recommendation:` label, but preserve every event timestamp when reporting what happened.
+- Change History uses a virtualized table inside the app scroll host, so the DOM contains only the current viewport. Start at the top of `div.awsm-nav-bar-and-content`, scroll through the full table in overlapping increments smaller than one viewport, and collect every top-level `.particle-table-row` at each position.
+- Accumulate rows across the entire scroll and deduplicate only overlap caused by the same virtual row re-rendering between positions. Prefer a stable row identifier or virtual index; otherwise compare the full visible row text, timestamp, and ordered position. Do not collapse repeated-looking events unless they can be shown to be the same row.
+- Before grouping, reconcile the unique event count against the footer total for the active filters and date range. If the counts differ, reset to the top and rescan with smaller increments. Treat the audit as incomplete and record the discrepancy rather than reporting a complete result.
+- One recommendation type can produce several events. Group the accumulated rows by the `Applied recommendation:` label only after reconciliation, and preserve every distinct event timestamp when reporting what happened.
 
 ## Expanding exact changes
 
